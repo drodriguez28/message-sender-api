@@ -3,36 +3,37 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
-const mg = require("nodemailer-mailgun-transport");
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-const auth = {
+// Create Mailjet SMTP transporter
+const transporter = nodemailer.createTransport({
+  host: "in-v3.mailjet.com",
+  port: 587,
   auth: {
-    api_key: process.env.MAILGUN_API_KEY,
-    domain: process.env.MAILGUN_DOMAIN,
+    user: process.env.MJ_APIKEY_PUBLIC,
+    pass: process.env.MJ_APIKEY_PRIVATE,
   },
-};
-
-const transporter = nodemailer.createTransport(mg(auth));
+});
 
 app.post("/send-email", (req, res) => {
   const { to, subject, text } = req.body;
+
   const mailOptions = {
-    from: "deivid_business_sender@outlook.com",
-    to,
+    from: process.env.MJ_SENDER_EMAIL,
+    to: process.env.MJ_RECEIVER_EMAIL,
     subject,
     text,
   };
 
-  transporter.sendMail(mailOptions, function (error, info) {
+  transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
-      console.log(error);
+      console.error("Error sending email:", error);
       res.status(500).send("Error sending email");
     } else {
-      console.log("Email sent:", info);
+      console.log("Email sent:", info.response);
       res.send("Email sent successfully");
     }
   });
